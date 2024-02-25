@@ -1,6 +1,8 @@
 #include <future>
 #include <iostream>
+#include <mutex>
 #include <thread>
+#include <unordered_set>
 
 #include <vlcpp/vlc.hpp>
 
@@ -53,30 +55,49 @@ int main(int /*ac*/, char ** /*av*/) {
 
   crow::SimpleApp app;
 
+  std::mutex mtx;
+  std::unordered_set<crow::websocket::connection *> users;
+
+  CROW_WEBSOCKET_ROUTE(app, "/ws")
+      .onopen([&](crow::websocket::connection &conn) {
+        CROW_LOG_INFO << "new websocket connection from "
+                      << conn.get_remote_ip();
+        std::lock_guard<std::mutex> lock(mtx);
+        users.insert(&conn);
+      })
+      .onclose(
+          [&](crow::websocket::connection &conn, const std::string &reason) {
+            CROW_LOG_INFO << "websocket connection closed: " << reason;
+            std::lock_guard<std::mutex> lock(mtx);
+            users.erase(&conn);
+          })
+      .onmessage([&](crow::websocket::connection & /*conn*/,
+                     const std::string &data, bool is_binary) {
+        CROW_LOG_INFO << "websocket got message: Ignoring!";
+      });
+
   CROW_ROUTE(app, "/play")
-      .methods(crow::HTTPMethod::Post)(
-          [&current, &audio_player](const crow::request &req) {
-            auto data = crow::json::load(req.body);
-            if (!data || !data.has("url")) {
-              CROW_LOG_WARNING << "/play could not parse the json request, "
-                                  "which should include a 'url' key";
-              return crow::response(400);
-            }
+      .methods(crow::HTTPMethod::Post)([&current, &audio_player](
+                                           const crow::request &req) {
+        auto data = crow::json::load(req.body);
+        if (!data || !data.has("url")) {
+          CROW_LOG_WARNING << "/play could not parse the json request, "
+                              "which should include a 'url' key";
+          return crow::response(400);
+        }
 
-            std::string stream_url = data["url"].s();
-            CROW_LOG_INFO << "/play with for: " << stream_url;
-            std::jthread play{play_stream, std::ref(audio_player), stream_url};
-            current.swap(play);
+        std::string stream_url = data["url"].s();
+        CROW_LOG_INFO << "/play with for: " << stream_url;
+        std::jthread play{play_stream, std::ref(audio_player), stream_url};
+        current.swap(play);
 
-            return crow::response{crow::json::wvalue{crow::json::wvalue::object{}}};
-          });
-
-  CROW_ROUTE(app, "/stop")
-    .methods(crow::HTTPMethod::Post)(
-      [&current]() {
-        current.request_stop();
         return crow::response{crow::json::wvalue{crow::json::wvalue::object{}}};
-    });
+      });
+
+  CROW_ROUTE(app, "/stop").methods(crow::HTTPMethod::Post)([&current]() {
+    current.request_stop();
+    return crow::response{crow::json::wvalue{crow::json::wvalue::object{}}};
+  });
 
   CROW_ROUTE(app, "/volume")
   ([&audio_player]() {
@@ -84,19 +105,27 @@ int main(int /*ac*/, char ** /*av*/) {
   });
 
   CROW_ROUTE(app, "/volume")
-      .methods(crow::HTTPMethod::Post)(
-          [&audio_player](const crow::request &req) {
-            auto data = crow::json::load(req.body);
-            if (!data || !data.has("volume")) {
-              CROW_LOG_WARNING << "/volume could not parse the json request, "
-                                  "which should include a 'volume' key";
-              return crow::response(400);
-            }
+      .methods(crow::HTTPMethod::Post)([&audio_player, &mtx,
+                                        &users](const crow::request &req) {
+        auto data = crow::json::load(req.body);
+        if (!data || !data.has("volume")) {
+          CROW_LOG_WARNING << "/volume could not parse the json request, "
+                              "which should include a 'volume' key";
+          return crow::response(400);
+        }
 
-            int volume = data["volume"].i();
-            audio_player.volume(volume);
-            return crow::response{crow::json::wvalue{crow::json::wvalue::object{}}};
-          });
+        int volume = data["volume"].i();
+        audio_player.volume(volume);
+
+        crow::json::wvalue volume_json{{"volume", volume}};
+
+        std::lock_guard<std::mutex> lock(mtx);
+        for (auto u : users) {
+          u->send_text(volume_json.dump());
+        }
+
+        return crow::response{crow::json::wvalue{crow::json::wvalue::object{}}};
+      });
 
   CROW_ROUTE(app, "/streamurls")
   ([]() {
