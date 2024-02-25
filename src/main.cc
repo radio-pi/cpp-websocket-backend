@@ -97,6 +97,64 @@ int main(int /*ac*/, char ** /*av*/) {
             return crow::response{"{}"};
           });
 
+  CROW_ROUTE(app, "/streamurls")
+  ([]() {
+    crow::json::wvalue::list stream_list_map(
+        {crow::json::wvalue::object{{
+             {"name", "Hardbase"},
+             {"url", "http://listen.hardbase.fm/tunein-mp3-pls"},
+             {"img", "/image/Hardbasefm.jpg"},
+             {"orderid", 1},
+         }},
+         crow::json::wvalue::object{{
+             {"name", "Technobase"},
+             {"url", "http://listen.technobase.fm/tunein-mp3-asx"},
+             {"img", ""},
+             {"orderid", 2},
+         }},
+         crow::json::wvalue::object{{
+             {"name", "Radio 24"},
+             {"url", "http://icecast.radio24.ch/radio24"},
+             {"img", "https://upload.wikimedia.org/wikipedia/de/thumb/3/33/"
+                     "Radio_24_Logo.svg/154px-Radio_24_Logo.svg.png"},
+             {"orderid", 0},
+         }},
+         crow::json::wvalue::object{{
+             {"name", "Radio SRF 1"},
+             {"url", "http://stream.srg-ssr.ch/m/drs1/mp3_128"},
+             {"img", "https://www.srf.ch/play/v3/svgs/radio-srf-1-small.svg"},
+             {"orderid", 3},
+         }},
+         crow::json::wvalue::object{{
+             {"name", "Radio SRF 2"},
+             {"url", "http://stream.srg-ssr.ch/m/drs2/mp3_128"},
+             {"img",
+              "https://www.srf.ch/play/v3/svgs/radio-srf-2-kultur-small.svg"},
+             {"orderid", 4},
+         }},
+         crow::json::wvalue::object{{
+             {"name", "Radio SRF 3"},
+             {"url", "http://stream.srg-ssr.ch/m/drs3/mp3_128"},
+             {"img", "https://www.srf.ch//play/v3/svgs/radio-srf-3-small.svg"},
+             {"orderid", 5},
+         }},
+         crow::json::wvalue::object{{
+             {"name", "Radio Swiss Jazz"},
+             {"url", "http://stream.srg-ssr.ch/m/rsj/mp3_128"},
+             {"img", ""},
+             {"orderid", 6},
+         }},
+         crow::json::wvalue::object{{
+             {"name", "Radio Swiss Pop"},
+             {"url", "http://stream.srg-ssr.ch/m/rsp/mp3_128"},
+             {"img", ""},
+             {"orderid", 7},
+         }}});
+
+    crow::json::wvalue stream_list(stream_list_map);
+    return stream_list;
+  });
+
   app.loglevel(crow::LogLevel::Info);
   app.port(8000).multithreaded().run();
 }
