@@ -68,18 +68,19 @@ int main(int /*ac*/, char ** /*av*/) {
             std::jthread play{play_stream, std::ref(audio_player), stream_url};
             current.swap(play);
 
-            return crow::response{"{}"};
+            return crow::response{crow::json::wvalue{crow::json::wvalue::object{}}};
           });
 
   CROW_ROUTE(app, "/stop")
-  ([&current]() {
-    current.request_stop();
-    return "{}";
-  });
+    .methods(crow::HTTPMethod::Post)(
+      [&current]() {
+        current.request_stop();
+        return crow::response{crow::json::wvalue{crow::json::wvalue::object{}}};
+    });
 
   CROW_ROUTE(app, "/volume")
   ([&audio_player]() {
-    return std::format("volume: {}", audio_player.volume());
+    return crow::json::wvalue{{"volume", audio_player.volume()}};
   });
 
   CROW_ROUTE(app, "/volume")
@@ -94,7 +95,7 @@ int main(int /*ac*/, char ** /*av*/) {
 
             int volume = data["volume"].i();
             audio_player.volume(volume);
-            return crow::response{"{}"};
+            return crow::response{crow::json::wvalue{crow::json::wvalue::object{}}};
           });
 
   CROW_ROUTE(app, "/streamurls")
@@ -151,8 +152,8 @@ int main(int /*ac*/, char ** /*av*/) {
              {"orderid", 7},
          }}});
 
-    crow::json::wvalue stream_list(stream_list_map);
-    return stream_list;
+    crow::json::wvalue stream_list{stream_list_map};
+    return crow::response{stream_list};
   });
 
   app.loglevel(crow::LogLevel::Info);
