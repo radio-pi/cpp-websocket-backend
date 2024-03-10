@@ -45,3 +45,12 @@ make -j9
 ```
 clang-format src
 ```
+
+## Deploy systemd service
+
+```
+sudo cp radiopi.service /lib/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable radiopi
+sudo systemctl start radiopi
+```

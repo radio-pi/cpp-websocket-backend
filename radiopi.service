@@ -1,0 +1,16 @@
+[Unit]
+Description=Radio Pi cpp backend service
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/l33tname/cpp-websocket-backend/build
+ExecStart=/home/l33tname/cpp-websocket-backend/build/src/radiopi
+KillMode=process
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
