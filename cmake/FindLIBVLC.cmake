@@ -61,6 +61,7 @@ FIND_LIBRARY(LIBVLC_LIBRARY NAMES vlc libvlc
     "$ENV{LIB_DIR}/lib"
     "$ENV{LIB_DIR}/usr/lib"
     "$ENV{LIB_DIR}/usr/lib64"
+    "$ENV{LIB_DIR}/usr/lib/aarch64-linux-gnu"
     #Mac OS
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/plugins"
@@ -71,12 +72,13 @@ FIND_LIBRARY(LIBVLC_LIBRARY NAMES vlc libvlc
     "c:/Program Files (x86)/VideoLAN/VLC/sdk/lib"
   )
 FIND_LIBRARY(LIBVLC_LIBRARY NAMES vlc libvlc)
-FIND_LIBRARY(LIBVLCCORE_LIBRARY NAMES vlccore libvlccore
+FIND_LIBRARY(LIBVLCCORE_LIBRARY NAMES vlccore libvlccore libvlccore.so.9
   HINTS "$ENV{LIBVLC_LIBRARY_PATH}"
   PATHS
     "$ENV{LIB_DIR}/lib"
     "$ENV{LIB_DIR}/usr/lib"
     "$ENV{LIB_DIR}/usr/lib64"
+    "$ENV{LIB_DIR}/usr/lib/aarch64-linux-gnu"
     #Mac OS
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/contribs/plugins"
@@ -86,7 +88,7 @@ FIND_LIBRARY(LIBVLCCORE_LIBRARY NAMES vlccore libvlccore
     c:/msys/local/lib
     "c:/Program Files (x86)/VideoLAN/VLC/sdk/lib"
   )
-FIND_LIBRARY(LIBVLCCORE_LIBRARY NAMES vlccore libvlccore)
+FIND_LIBRARY(LIBVLCCORE_LIBRARY NAMES vlccore libvlccore libvlccore.so.9)
 
 IF (LIBVLC_INCLUDE_DIR AND LIBVLC_LIBRARY AND LIBVLCCORE_LIBRARY)
    SET(LIBVLC_FOUND TRUE)
@@ -100,6 +102,10 @@ IF (LIBVLC_FOUND)
    ENDIF (NOT LIBVLC_FIND_QUIETLY)
 ELSE (LIBVLC_FOUND)
    IF (LIBVLC_FIND_REQUIRED)
+      MESSAGE(STATUS "Maybe found LibVLC include-dir path: ${LIBVLC_INCLUDE_DIR}")
+      MESSAGE(STATUS "Maybe found LibVLC library path:${LIBVLC_LIBRARY}")
+      MESSAGE(STATUS "Maybe found LibVLCcore library path:${LIBVLCCORE_LIBRARY}")
+
       MESSAGE(FATAL_ERROR "Could not find LibVLC")
    ENDIF (LIBVLC_FIND_REQUIRED)
 ENDIF (LIBVLC_FOUND)
