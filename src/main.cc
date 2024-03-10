@@ -1,42 +1,18 @@
 #include <future>
-#include <iostream>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
 
-#include <vlcpp/vlc.hpp>
-
 #include <crow.h>
 
-struct Player {
-  Player() : _vlc(VLC::Instance(0, nullptr)){};
-  void play(std::string stream_url) {
-    auto media = VLC::Media(_vlc, stream_url, VLC::Media::FromLocation);
-    _mediaplayer = VLC::MediaPlayer(media);
-    _mediaplayer.play();
-  }
-  void stop() { _mediaplayer.stop(); }
-  int volume() {
-    if (_mediaplayer) {
-      return _mediaplayer.volume();
-    }
-    return 0;
-  }
-  void volume(int v) {
-    if (_mediaplayer) {
-      _mediaplayer.setVolume(v);
-    }
-  }
-  VLC::Instance _vlc;
-  VLC::MediaPlayer _mediaplayer;
-};
+#include "player.hpp"
 
 void play_stream(std::stop_token stoken, Player &player,
                  std::string stream_url) {
   CROW_LOG_INFO << "mediaplayer: start for " << stream_url;
 
   std::promise<void> stop;
-  std::stop_callback callBack(stoken, [&player, &stop] {
+  std::stop_callback callback(stoken, [&player, &stop] {
     CROW_LOG_INFO << "mediaplayer: stop";
     player.stop();
     stop.set_value();
@@ -75,6 +51,13 @@ int main(int /*ac*/, char ** /*av*/) {
                      const std::string &data, bool is_binary) {
         CROW_LOG_INFO << "websocket got message: Ignoring!";
       });
+
+  CROW_ROUTE(app, "/")
+  ([]() {
+    crow::response resp;
+    resp.set_static_file_info("static/index.html");
+    return resp;
+  });
 
   CROW_ROUTE(app, "/play")
       .methods(crow::HTTPMethod::Post)([&current, &audio_player](
@@ -129,7 +112,7 @@ int main(int /*ac*/, char ** /*av*/) {
 
   CROW_ROUTE(app, "/streamurls")
   ([]() {
-    crow::json::wvalue::list stream_list_map(
+    const crow::json::wvalue::list stream_list_map(
         {crow::json::wvalue::object{{
              {"name", "Hardbase"},
              {"url", "http://listen.hardbase.fm/tunein-mp3-pls"},
