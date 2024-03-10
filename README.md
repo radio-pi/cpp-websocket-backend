@@ -10,9 +10,30 @@ Using [libvlcpp](https://github.com/videolan/libvlcpp/) &
 
 ## Build
 
+Fedora
+
 ```
 sudo dnf install vlc-devel libvlcpp-devel
+```
 
+Debian (on a RPI)
+
+```
+sudo apt install python3-pip
+sudo pip install --break-system-packages conan
+conan profile detect --force
+# make sure its cpp20!
+
+sudo apt install cmake
+sudo apt install vlc libvlc-dev
+wget https://code.videolan.org/videolan/libvlcpp/-/archive/master/libvlcpp-master.zip && unzip libvlcpp-master.zip
+sudo cp -r libvlcpp-master/vlcpp/ /usr/include/
+rm -rf libvlcpp-master libvlcpp-master.zip
+```
+
+All
+
+```
 conan install . --output-folder=build --build=missing
 cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
