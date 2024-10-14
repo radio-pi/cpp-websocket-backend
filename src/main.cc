@@ -55,7 +55,10 @@ int main(int /*ac*/, char ** /*av*/) {
   CROW_ROUTE(app, "/")
   ([]() {
     crow::response resp;
-    resp.set_static_file_info("static/index.html");
+
+    // https://stackoverflow.com/a/63229171
+    auto index_html_path = std::filesystem::canonical("/proc/self/exe").parent_path() / "static/index.html";
+    resp.set_static_file_info_unsafe(index_html_path);
     return resp;
   });
 
@@ -169,5 +172,5 @@ int main(int /*ac*/, char ** /*av*/) {
   });
 
   app.loglevel(crow::LogLevel::Info);
-  app.port(8000).multithreaded().run();
+  app.port(8001).multithreaded().run();
 }
